@@ -1,4 +1,5 @@
 const express = require("express");
+// const dotenv = require('dotenv')
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv").config();
@@ -8,7 +9,41 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
 const PORT = process.env.PORT || 8080;
+const options = {
+  swaggerDefinition: {
+   
+    info: {
+      title: 'Priyaranjan ',
+      version: '1.0.0',
+      description: 'This api user authentication uses',
+      paths:"Dog",
+      contact: {
+        name: 'JSONPlaceholder',
+        url: 'https://jsonplaceholder.typicode.com',
+      },
+      license: {
+        name: 'Licensed Under MIT',
+        url: 'https://spdx.org/licenses/MIT.html',
+      },
+
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}`,
+        description: 'Development server'
+      }
+    ],
+  },
+  
+  apis: ['index.js'] // Path to your main file
+};
+
+const specs = swaggerJsdoc(options);
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
 //mongodb connection
 mongoose.set("strictQuery", false);
@@ -34,10 +69,41 @@ const userSchema = mongoose.Schema({
 const userModel = mongoose.model("userData", userSchema);
 
 //api
-app.get("/api", (req, res) => {
+app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+// Define signup route
+/**
+ * @swagger
+ * /api/signup:
+ *   post:
+ *     summary: Create a new user
+ *     description: Endpoint for user signup
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - in: body
+ *         name: user
+ *         description: User object
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             email:
+ *               type: string
+ *             firstName:
+ *               type: string
+ *             lastName:
+ *               type: string
+ *             password:
+ *               type: string
+ *             confirmPassword:
+ *               type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ */
 //sign up
 app.post("/api/signup", async (req, res) => {
   try{
@@ -45,33 +111,32 @@ app.post("/api/signup", async (req, res) => {
     // const emailRegex = /\b[A-Za-z0-9._%+-]+@gmail\.com\b/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const user = await userModel.findOne({email})
-
     console.log("user",req.body)
 
     if(user){
-        throw new Error("Already user exits.")
+        throw new Error("User Already Exist.")
     }
 
     if(!firstName){
-      throw new Error("Please provide name")
+      throw new Error("Please Enter firstname")
   }
   if(!lastName){
-      throw new Error("Please provide lastname")
+      throw new Error("Please Enter lastname")
   }
     if(!email){
-       throw new Error("Please provide email")
+       throw new Error("Please Enter email")
     }
     if(!emailRegex.test(email)){
        throw new Error("Invalid email format please enter email format.")
     }
     if(!password){
-        throw new Error("Please provide password")
+        throw new Error("Please Enter password")
     }
     if(!confirmPassword){
-        throw new Error("Please provide confirmPassword")
+        throw new Error("Please Enter confirmPassword")
     }
     if (password !== confirmPassword) {
-      throw new Error( "Passwords do not match" );
+      throw new Error( "Passwords do't  match" );
     }
     
     const payload = {
@@ -88,17 +153,6 @@ app.post("/api/signup", async (req, res) => {
         error : false,
         message : "User created Successfully!"
     })
-    // userModel.findOne({ email: email }, (err, result) => {
-    //   // console.log(result);
-    //   console.log(err);
-    //   if (result) {
-    //     res.send({ message: "Email id is already register", isSuccess: false });
-    //   } else {
-    //     const data = userModel(req.body);
-    //     const save = data.save();
-    //     res.send({ message: "Successfully sign up", isSuccess: true });
-    //   }
-    // });
   }
   catch(err){
     res.json({
@@ -107,106 +161,100 @@ app.post("/api/signup", async (req, res) => {
         success : false,
     })
 }
-  // console.log(req.body);
-  // const {firstName,lastName,password,confirmPassword,email } = req.body;
-
- 
 });
 
-//api login
-// app.post("/login", (req, res) => {
-//   // console.log(req.body);
-//   try{
-//     const { email, password, confirmPassword } = req.body;
-//     const user =  userModel.findOne({ email });
-//     if (!user) {
-//             return res.status(401).json({ message: "Invalid email or password" });
-//           }
-      
-//           // Check if password matches confirm password
-//           if (password !== confirmPassword) {
-//             return res.status(401).json({ message: "Password and confirm password do not match" });
-//           }
-      
-//           // Check if password matches user's password
-//           if (password !== user.password) {
-//             return res.status(401).json({ message: "Invalid password" });
-//           }
-//           res.status(200).json({ message: "Login successful" });
-//   }catch (error) {
-//         console.error("Error logging in:", error);
-//         res.status(500).json({ message: "Internal server error" });
-//       }
-//   userModel.findOne({ email: email }, (err, result) => {
-//     if (result) {
-//       const dataSend = {
-//         _id: result._id,
-//         firstName: result.firstName,
-//         lastName: result.lastName,
-//         password: result.passwordcon,
-//         confpassword: result.confirmPassword,
-//         lastName: result.lastName,
-//         email: result.email,
-//         image: result.image,
-//       };
-//       console.log(dataSend);
-//       res.send({
-//         message: "Login is successfully",
-//         isSuccess: true,
-//         data: dataSend,
-//       });
-//     } else {
-//       res.send({
-//         message: "Email is not available, please sign up",
-//         isSuccess: false,
-//       });
-//     }
-//   });
-// });
-
-
-
-
+// Define login route
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Login to the application
+ *     description: Endpoint for user login
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - in: body
+ *         name: credentials
+ *         description: User credentials
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userName:
+ *               type: string
+ *             password:
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid email or password
+ */
 
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { userName, password} = req.body;
 
     // Find user by email
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email: userName });
     let responseData = {
       isSuccess: false,
-      userData: null,
+      data: null,
       errorMessage: []
     };
     // If user not found
-    if (!user) {
-      responseData.errorMessage.push("User not found ");
-    }
-
-    // Check if password and confirm password match
-     // Check if password and confirm password match
-     if (password !== confirmPassword) {
-      responseData.errorMessage.push("Passwords don't match");
-    } else if (user && password !== user.password) {
-      responseData.errorMessage.push("Password invalid");
-    }
-    if (responseData.errorMessage.length > 0) {
-      return res.status(401).json(responseData);
-    }
-
-    // Login successful
-    // console.log("User logged in:", user);
-    // res.status(200).json({ isSuccess: true, message: "Login successful",user });
-    responseData.isSuccess = true;
-    responseData.userData = user;
-    res.status(200).json(responseData);
+      // If user not found
+      if (!user) {
+        responseData.errorMessage.push("User not found");
+      } else {
+        // If password is correct
+        if (user.password === password) {
+          const userData = { username: user.email };
+          responseData.isSuccess = true;
+          responseData.data = user;
+        } else {
+          responseData.errorMessage.push("Invalid password");
+        }
+      }
+  
+      res.status(200).json(responseData);
+      console.log("userAfetrLogin",user)
 
   } catch (error) {
     console.error("Error logging in:", error);
-    res.status(500).json({ isSuccess: false, userData: null, errorMessage: "Internal server error" });
+    res.status(500).json({ isSuccess: false, data: null, errorMessage: "Internal server error" });
   }
 });
+
+
+// all User
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   email:
+ *                     type: string
+ */
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await userModel.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 //product section
 
 const schemaProduct = mongoose.Schema({
@@ -284,6 +332,8 @@ app.post("/create-checkout-session",async(req,res)=>{
      }
 
 })
+
+
 
 
 //server is ruuning
